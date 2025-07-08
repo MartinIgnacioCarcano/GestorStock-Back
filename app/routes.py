@@ -11,7 +11,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from flask import current_app
 
-SECRET_KEY = "tu_clave_secreta_aqui"  
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")  
 
 productos_bp = Blueprint('productos', __name__)
 auth_bp = Blueprint("auth", __name__)
@@ -21,13 +21,11 @@ auth_bp = Blueprint("auth", __name__)
 def listar_usuarios():
     try:
         usuarios = Usuario.query.all()
-        print(f"Usuarios encontrados: {len(usuarios)}")
         return jsonify([{
             "id": u.id,
             "username": u.username
         } for u in usuarios])
     except Exception as e:
-        print(f"Error al obtener usuarios: {str(e)}")
         return jsonify({"error": "Hubo un error al obtener los usuarios"}), 500
 
 @auth_bp.route("/rr", methods=["POST"])
@@ -38,7 +36,7 @@ def register():
     password = data.get("password")
 
     usuario_id = get_jwt_identity()
-    if usuario_id != 1:
+    if int(usuario_id) != 1:
         return jsonify({"error": "No tienes permiso para registrar usuarios"}), 403
     else:
         if Usuario.query.filter_by(username=username).first():
@@ -75,17 +73,6 @@ def login():
     return jsonify(access_token=access_token), 200
 
 
-    # usuario = Usuario.query.get(id)
-    # if not usuario:
-    #     return jsonify({"error": "Usuario no encontrado"}), 404
-    # try:
-    #     db.session.delete(usuario)
-    #     db.session.commit()
-    #     return jsonify({"mensaje": f"Usuario ID {id} eliminado"}), 200
-    # except Exception as e:
-    #     db.session.rollback()
-    #     return jsonify({"error": str(e)}), 500
-
 @auth_bp.route('/islogged', methods=['GET'])
 @jwt_required()
 def protegido():
@@ -94,23 +81,28 @@ def protegido():
 
 
 @auth_bp.route('/cambiar-password', methods=['PUT'])
+@jwt_required()
 def cambiar_password_dev():
     data = request.get_json()
-    usuario_id = data.get("id")
-    nueva_password = data.get("password")
+    usuario_id = get_jwt_identity()  # Obtener ID del usuario autenticado
+    if int(usuario_id) != 1:
+        return jsonify({"error": "No tienes permiso para cambiar la contraseña"}), 403
+    else:
+        usuario_id = data.get("id")
+        nueva_password = data.get("password")
 
-    if not usuario_id or not nueva_password:
-        return jsonify({"error": "Faltan datos"}), 400
+        if not usuario_id or not nueva_password:
+            return jsonify({"error": "Faltan datos"}), 400
 
-    usuario = Usuario.query.get(usuario_id)
+        usuario = Usuario.query.get(usuario_id)
 
-    if not usuario:
-        return jsonify({"error": "Usuario no encontrado"}), 404
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
 
-    usuario.set_password(nueva_password)
-    db.session.commit()
+        usuario.set_password(nueva_password)
+        db.session.commit()
 
-    return jsonify({"message": f"Contraseña actualizada para usuario ID {usuario_id}"}), 200
+        return jsonify({"message": f"Contraseña actualizada para usuario ID {usuario_id}"}), 200
 #--------------------------
 # Rutas para Productos ----
 #--------------------------
@@ -118,7 +110,6 @@ def cambiar_password_dev():
 @jwt_required()
 def get_productos():
     productos = Producto.query.all()
-    print(f"Productos encontrados: {len(productos)}")
     return jsonify([{
         "id": p.id,
         "descripcion": p.descripcion,
@@ -435,7 +426,6 @@ def eliminar_ingreso(id):
             for detalle in ingreso.detalles:
                 producto = Producto.query.get(detalle.producto_id)
                 if producto:
-                    print(f"Revirtiendo stock de {producto.descripcion}: {producto.stock} -> {producto.stock} - {detalle.cantidad}")
                     producto.stock -= detalle.cantidad
                     producto.actualizar_estado()
 
