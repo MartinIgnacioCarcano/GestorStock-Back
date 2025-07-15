@@ -70,7 +70,12 @@ def login():
         return jsonify({"error": "Credenciales incorrectas"}), 401
 
     access_token = create_access_token(identity=str(user.id))
-    return jsonify(access_token=access_token), 200
+    rol = "admin" if int(user.id) == 1 else "usuario"
+
+    return jsonify({
+        "access_token": access_token,
+        "rol": rol
+    }), 200
 
 
 @auth_bp.route('/islogged', methods=['GET'])
