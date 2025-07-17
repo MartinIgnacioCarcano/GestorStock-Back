@@ -27,7 +27,7 @@ El sistema permite que múltiples empleados realicen ingresos y extracciones de 
 
 ## 🌍 Producción
 
-- Backend desplegado en Render: [https://amiens-back-bxd2.onrender.com](https://amiens-back-bxd2.onrender.com)
+- Backend desplegado en Render: [https://gestorstock-back.onrender.com](https://gestorstock-back.onrender.com)
 
 ⚠️ Render puede tardar **1 a 2 minutos** en levantar el servidor si está inactivo. Esto puede afectar la primera carga al iniciar sesión desde el frontend.
 
